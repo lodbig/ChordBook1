@@ -1,36 +1,42 @@
-name: Build and Release
+name: Build and Release Installer
 
 on:
   push:
     tags:
-      - 'v*' # יופעל בכל פעם שתעלה תג שמתחיל ב-v (למשל v1.0.0)
+      - 'v*'
 
 jobs:
   build:
-    runs-on: windows-latest # נדרש ווינדוס כדי לבנות EXE
+    runs-on: windows-latest
+    
+    permissions:
+      contents: write # פותר את שגיאת ה-403
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Install Flutter
+      - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
 
-      - name: Get dependencies
+      - name: Install dependencies
         run: flutter pub get
 
-      - name: Build APK
-        run: flutter build apk --release
-
-      - name: Build Windows EXE
+      - name: Build Flutter Windows
         run: flutter build windows --release
 
-      - name: Release
+      - name: Compile Inno Setup
+        shell: pwsh
+        run: |
+          # ISCC הוא ה-Compiler של Inno Setup שנמצא בנתיב המערכת ב-GitHub
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
+
+      - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            build/app/outputs/flutter-apk/app-release.apk
-            build/windows/runner/Release/*.exe
+          # כאן אנחנו מעלים את קובץ ההתקנה שנוצר
+          files: build/windows/runner/Release/MyApplicationSetup.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
