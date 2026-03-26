@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChordBook | ניהול אקורדים וביצוע מוסיקה בקלות</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* פלטת צבעים לעיצוב בהיר ונקי */
+            --bg-color: #f8fafc; 
+            --surface-color: #ffffff; 
+            --primary-gradient: linear-gradient(135deg, #2563eb, #7c3aed); 
+            --text-main: #0f172a; 
+            --text-muted: #475569; 
+            --accent: #2563eb; 
+            --border-color: #e2e8f0; 
+            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Heebo', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        h1, h2, h3 {
+            line-height: 1.2;
+        }
+
+        .gradient-text {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* --- Hero Section --- */
+        header {
+            padding: 100px 0 80px;
+            text-align: center;
+            background: var(--surface-color);
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .os-badges {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .os-badge {
+            background-color: #eff6ff;
+            color: #1e3a8a;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #bfdbfe;
+        }
+
+        .hero-title {
+            font-size: 4.5rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+        }
+
+        .hero-subtitle {
+            font-size: 1.8rem;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            font-weight: 400;
+        }
+
+        .hero-desc {
+            max-width: 700px;
+            margin: 0 auto 40px;
+            font-size: 1.2rem;
+            color: var(--text-muted);
+        }
+
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .cta-button {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 16px 35px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2);
+        }
+
+        .cta-button span {
+            font-size: 1.3rem;
+            margin-bottom: 3px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .cta-button p {
+            font-size: 0.85rem;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 25px rgba(37, 99, 235, 0.3);
+        }
+
+        .cta-button.secondary {
+            background: white;
+            color: var(--text-main);
+            border: 2px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .cta-button.secondary:hover {
+            border-color: var(--accent);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* --- Sections --- */
+        section {
+            padding: 80px 0;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 50px;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        /* --- Features Grid --- */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+        }
+
+        .feature-card {
+            background-color: var(--surface-color);
+            padding: 40px 30px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-md);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-lg);
+            border-color: #bfdbfe;
+        }
+
+        .feature-icon {
+            font-size: 2.8rem;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: var(--text-main);
+        }
+
+        .feature-card ul {
+            list-style: none;
+        }
+
+        .feature-card ul li {
+            position: relative;
+            padding-right: 28px;
+            margin-bottom: 12px;
+            color: var(--text-muted);
+            font-size: 1.05rem;
+        }
+
+        .feature-card ul li::before {
+            content: "✓";
+            position: absolute;
+            right: 0;
+            color: var(--accent);
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        /* --- Steps Container --- */
+        .steps-wrapper {
+            background-color: var(--surface-color);
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .steps-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .step-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 30px;
+            background: var(--bg-color);
+            padding: 30px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .step-number {
+            font-size: 3rem;
+            font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-left: 25px;
+            line-height: 1;
+            opacity: 0.9;
+            min-width: 60px;
+        }
+
+        .step-content h3 {
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+
+        .step-content p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* --- Tech Stack --- */
+        .tech-container {
+            text-align: center;
+            background: var(--surface-color);
+            padding: 60px 20px;
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-md);
+        }
+
+        .tech-tags {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 35px;
+        }
+
+        .tech-tag {
+            background: #f1f5f9;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 10px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.05rem;
+            transition: all 0.3s ease;
+        }
+
+        .tech-tag:hover {
+            background: var(--primary-gradient);
+            color: white;
+            border-color: transparent;
+            transform: translateY(-2px);
+        }
+
+        /* --- Footer --- */
+        footer {
+            text-align: center;
+            padding: 80px 0 40px;
+            background: var(--surface-color);
+            border-top: 1px solid var(--border-color);
+        }
+
+        @media (max-width: 768px) {
+            .hero-title { font-size: 3rem; }
+            .hero-subtitle { font-size: 1.4rem; }
+            .step-item { flex-direction: column; text-align: right; }
+            .step-number { margin-left: 0; margin-bottom: 15px; }
+            .btn-group { flex-direction: column; padding: 0 20px; }
+            .cta-button { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header / Hero -->
+    <header>
+        <div class="container">
+            <div class="os-badges">
+                <span class="os-badge">🪟 נתמך ב-Windows</span>
+                <span class="os-badge">📱 נתמך ב-Android</span>
+            </div>
+            
+            <h1 class="hero-title gradient-text">ChordBook</h1>
+            <h2 class="hero-subtitle">ניהול אקורדים וביצוע מוסיקה בקלות</h2>
+            <p class="hero-desc">
+                אפליקציה מתקדמת ויעילה לנגנים ואמני במה, המספקת כלים חכמים לניהול שירים ואקורדים בזמן אמת. 
+                תנגנו בביטחון מלא בעזרת טכנולוגיה עדכנית המאפשרת לכם להתמקד בדבר החשוב באמת - המוסיקה שלכם.
+            </p>
+            
+            <div class="btn-group">
+                <button class="cta-button" onclick="window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })">
+                    <span>🪟 הורד ל-Windows</span>
+                    <p>גרסת שולחן עבודה מלאה</p>
+                </button>
+                <button class="cta-button secondary" onclick="window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })">
+                    <span>📱 הורד ל-Android</span>
+                    <p>אפליקציה ניידת לטאבלט וסמארטפון</p>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Features Section -->
+    <section>
+        <div class="container">
+            <h2 class="section-title">⚡ תכונות עיקריות</h2>
+            <div class="features-grid">
+                
+                <div class="feature-card">
+                    <span class="feature-icon">🎵</span>
+                    <h3>ביצוע חכם</h3>
+                    <ul>
+                        <li><strong>גלילה אוטומטית:</strong> התאמת מהירות הגלילה לקצב הנגינה שלך</li>
+                        <li><strong>קריאה בזמן אמת:</strong> טקסט גדול וקריא עם אקורדים מובחנים</li>
+                        <li><strong>שליטה מלאה:</strong> קיצורי מקלדת (ב-Windows) ומסך מגע (באנדרואיד) לשליטה חזקה בביצוע</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <span class="feature-icon">🎼</span>
+                    <h3>ניהול שירים</h3>
+                    <ul>
+                        <li><strong>ספרייה ממוקדת:</strong> אחסון ארגונומי של כל השירים שלך</li>
+                        <li><strong>חיפוש מהיר:</strong> מצא שיר בשניות עם תגיות וקטגוריות</li>
+                        <li><strong>עריכה גמישה:</strong> ערוך שירים, אקורדים וטקסט בקלות</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <span class="feature-icon">🎚️</span>
+                    <h3>הנדסת סולמות</h3>
+                    <ul>
+                        <li><strong>שינוי מיידי:</strong> שנה סולמות בלחיצה אחת מבלי להשפיע על המבנה</li>
+                        <li><strong>תמיכה בסלאש אקורדים:</strong> הנדסה מדויקת של אקורדים מורכבים</li>
+                        <li><strong>זכרון אוטומטי:</strong> האפליקציה זוכרת את הסולם המועדף לכל שיר</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <span class="feature-icon">🎨</span>
+                    <h3>התאמה אישית</h3>
+                    <ul>
+                        <li><strong>מצב לילה:</strong> ממשק מותאם להופעות בתאורה נמוכה</li>
+                        <li><strong>אקורדים מותאמים:</strong> הגדר אקורדים משלך וצור קיצורים</li>
+                        <li><strong>שכבות גדלים:</strong> התאם אישית את גודל הטקסט לצרכיך</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <span class="feature-icon">📋</span>
+                    <h3>ארגון מתקדם</h3>
+                    <ul>
+                        <li><strong>פלייליסטים וסט-ליסטים:</strong> ארגן שירים לביצועים ומופעים שלמים</li>
+                        <li><strong>תגיות גמישות:</strong> סווג שירים לפי ז'אנר, קושי או שימוש</li>
+                        <li><strong>ייצוא PDF:</strong> כנס את השירים שלך לפורמט מודפס ואיכותי</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <span class="feature-icon">📱</span>
+                    <h3>טכנולוגיה חזקה</h3>
+                    <ul>
+                        <li><strong>עבודה ללא אינטרנט:</strong> פעול באופן מלא וללא תלות ברשת (Offline)</li>
+                        <li><strong>צפייה משולבת:</strong> קרא טאבים בצורה חלקה ונוחה</li>
+                        <li><strong>ממשק יציב:</strong> תגובתיות מהירה, דפדוף וביצועים מעולים</li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Start Section -->
+    <section class="steps-wrapper">
+        <div class="container">
+            <h2 class="section-title" style="padding-top: 40px;">🚀 התחלה מהירה ב-5 שלבים</h2>
+            <div class="steps-container">
+                
+                <div class="step-item">
+                    <div class="step-number">01</div>
+                    <div class="step-content">
+                        <h3>הורדה והתקנה</h3>
+                        <p>הורד את ChordBook למחשב (Windows) או לנייד (Android) והתקן בדקה אחת. לא נדרשות תוכניות נוספות.</p>
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">02</div>
+                    <div class="step-content">
+                        <h3>הוסף את השירים שלך</h3>
+                        <p>צור שירים חדשים בעריכה כללית פשוטה, או הדבק קובץ טקסט עם אקורדים קיימים ישירות לאפליקציה.</p>
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">03</div>
+                    <div class="step-content">
+                        <h3>סדר שירים בתגיות</h3>
+                        <p>תייג שירים לפי רגע מוסיקלי - ז'אנר, רמת קושי, אירוע, או קטגוריה אישית משלך.</p>
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">04</div>
+                    <div class="step-content">
+                        <h3>כמו פלייליסט משלך</h3>
+                        <p>ארגן שירים וצור רשימות מסודרות לביצועים קרובים, חזרות להקה ותרגול מערכים.</p>
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">05</div>
+                    <div class="step-content">
+                        <h3>הנגן בביטחון</h3>
+                        <p>בחר שיר, התחל ביצוע, והישאר ממוקד בנגינה בעוד ChordBook מטפלת בכל השאר בצורה חלקה.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech Stack Section -->
+    <section>
+        <div class="container">
+            <div class="tech-container">
+                <h2 class="section-title" style="margin-bottom: 15px;">💻 מפרט טכני</h2>
+                <p style="color: var(--text-muted); font-size: 1.2rem;">ChordBook נבנתה בטכנולוגיות עדכניות ומדויקות ביותר לחוויה חוצת-פלטפורמות:</p>
+                
+                <div class="tech-tags">
+                    <span class="tech-tag">Flutter - ממשק רציף וחזק</span>
+                    <span class="tech-tag">Dart - שפה מודרנית</span>
+                    <span class="tech-tag">Riverpod - ניהול מצב יציב</span>
+                    <span class="tech-tag">Hive - מסד נתונים Offline</span>
+                    <span class="tech-tag">Go Router - ניווט יעיל</span>
+                    <span class="tech-tag">PDF Generation</span>
+                    <span class="tech-tag">Windows App & Android App</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer & CTA -->
+    <footer>
+        <div class="container">
+            <h2 class="section-title" style="margin-bottom: 40px;">מוכנים לעלות לבמה?</h2>
+            
+            <div class="btn-group">
+                <button class="cta-button">
+                    <span>🪟 הורד חינם ל-Windows</span>
+                </button>
+                <button class="cta-button secondary">
+                    <span>📱 הורד חינם ל-Android</span>
+                </button>
+            </div>
+            
+            <p style="margin-top: 50px; color: var(--text-muted); font-size: 0.95rem;">
+                © 2026 ChordBook. כל הזכויות שמורות.<br>
+                חינם לחלוטין ללא מודעות - עם תמיכה מלאה למשתמשים.
+            </p>
+        </div>
+    </footer>
+
+</body>
+</html>
