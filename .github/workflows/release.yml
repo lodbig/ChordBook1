@@ -37,6 +37,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           # כאן אנחנו מעלים את קובץ ההתקנה שנוצר
-          files: build/windows/runner/Release/MyApplicationSetup.exe
+        files: build/windows/x64/runner/Release/ChordBookSetup.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

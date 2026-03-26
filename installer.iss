@@ -6,18 +6,17 @@ DefaultGroupName=ChordBook
 UninstallDisplayIcon={app}\chordbook.exe
 Compression=lzma2
 SolidCompression=yes
-OutputDir=.\build\windows\runner\Release
+; כאן עדכנתי ל-x64
+OutputDir=.\build\windows\x64\runner\Release
 OutputBaseFilename=ChordBookSetup
-; הגדרת שפה לעברית כברירת מחדל
 ShowLanguageDialog=no
 
 [Languages]
-; כאן מגדירים את השפה, לא בתוך [Setup]
 Name: "hebrew"; MessagesFile: "compiler:Languages\Hebrew.isl"
 
 [Files]
-; ודא ששם ה-EXE כאן תואם לשם הפרויקט שלך (chordbook.exe)
-Source: "build\windows\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
+; הוספתי x64 לנתיב המקור
+Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 
 [Icons]
 Name: "{group}\ChordBook"; Filename: "{app}\chordbook.exe"
