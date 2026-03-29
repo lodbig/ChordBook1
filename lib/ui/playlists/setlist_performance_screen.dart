@@ -1,7 +1,7 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -23,7 +23,8 @@ class SetlistPerformanceScreen extends ConsumerStatefulWidget {
 }
 
 class _SetlistPerformanceScreenState
-    extends ConsumerState<SetlistPerformanceScreen> {
+    extends ConsumerState<SetlistPerformanceScreen>
+    with SingleTickerProviderStateMixin {
   final _scrollController = ScrollController();
   final List<GlobalKey> _songKeys = [];
 
@@ -32,10 +33,10 @@ class _SetlistPerformanceScreenState
   int _currentSongIndex = 0;
   bool _sidePanelOpen = false;
   bool _isScrolling = false;
-  double _scrollSpeed = 0; // יאותחל מה-provider
+  double _scrollSpeed = 3.0;
   double _scrollDelay = 3.0;
-  bool _speedInitialized = false;
-  Timer? _scrollTimer;
+  Ticker? _scrollTicker;
+  double _scrollAccum = 0;
 
   double _fontSize = 16.0;
   static const double _minFontSize = 10.0;
@@ -46,11 +47,19 @@ class _SetlistPerformanceScreenState
     super.initState();
     _load();
     _scrollController.addListener(_updateCurrentSong);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          _scrollSpeed = ref.read(defaultScrollSpeedProvider);
+          _scrollDelay = ref.read(globalScrollDelayProvider);
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
-    _scrollTimer?.cancel();
+    _scrollTicker?.dispose();
     _scrollController.removeListener(_updateCurrentSong);
     _scrollController.dispose();
     super.dispose();
@@ -106,25 +115,34 @@ class _SetlistPerformanceScreenState
 
   void _toggleAutoScroll() {
     if (_isScrolling) {
-      _scrollTimer?.cancel();
+      _scrollTicker?.stop();
+      _scrollTicker?.dispose();
+      _scrollTicker = null;
       setState(() => _isScrolling = false);
     } else {
       setState(() => _isScrolling = true);
       Future.delayed(Duration(milliseconds: (_scrollDelay * 1000).round()), () {
         if (!mounted || !_isScrolling) return;
-        _scrollTimer = Timer.periodic(const Duration(milliseconds: 50), (_) {
+        _scrollAccum = 0;
+        _scrollTicker = createTicker((_) {
           if (!_scrollController.hasClients) return;
           final max = _scrollController.position.maxScrollExtent;
           final current = _scrollController.offset;
           if (current >= max) {
-            _scrollTimer?.cancel();
+            _scrollTicker?.stop();
+            _scrollTicker?.dispose();
+            _scrollTicker = null;
             setState(() => _isScrolling = false);
             return;
           }
-          _scrollController.jumpTo(
-            (current + _scrollSpeed * 0.5).clamp(0, max),
-          );
+          _scrollAccum += _scrollSpeed * 10 / 60;
+          final pixels = _scrollAccum.floor();
+          if (pixels > 0) {
+            _scrollAccum -= pixels;
+            _scrollController.jumpTo((current + pixels).clamp(0, max));
+          }
         });
+        _scrollTicker!.start();
       });
     }
   }
@@ -133,12 +151,6 @@ class _SetlistPerformanceScreenState
   Widget build(BuildContext context) {
     if (_playlist == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
-    // אתחל מהירות מה-provider פעם אחת
-    if (!_speedInitialized) {
-      _scrollSpeed = ref.read(defaultScrollSpeedProvider);
-      _speedInitialized = true;
     }
 
     final isAndroid = Platform.isAndroid;
@@ -240,24 +252,26 @@ class _SetlistPerformanceScreenState
                         icon: Icon(_isScrolling ? Icons.pause : Icons.play_arrow),
                         onPressed: _toggleAutoScroll,
                       ),
-                      SizedBox(
-                        width: 80,
+                      const Icon(Icons.speed, size: 14),
+                      Expanded(
+                        flex: 3,
                         child: Slider(
                           value: _scrollSpeed,
-                          min: 1,
-                          max: 10,
+                          min: 0.1,
+                          max: 3.0,
+                          divisions: 9,
                           onChanged: (v) => setState(() => _scrollSpeed = v),
                         ),
                       ),
                       // Delay slider
-                      const Icon(Icons.timer_outlined, size: 16),
-                      SizedBox(
-                        width: 70,
+                      const Icon(Icons.timer_outlined, size: 14),
+                      Expanded(
+                        flex: 3,
                         child: Slider(
                           value: _scrollDelay,
                           min: 0,
-                          max: 10,
-                          divisions: 10,
+                          max: 60,
+                          divisions: 60,
                           onChanged: (v) => setState(() => _scrollDelay = v),
                         ),
                       ),

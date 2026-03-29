@@ -385,35 +385,38 @@ class _FontFamilyTile extends ConsumerWidget {
 class _DefaultScrollSpeedTile extends ConsumerWidget {
   const _DefaultScrollSpeedTile();
 
+  /// ממיר רמת מהירות לתיאור מספרי
+  static String _speedLabel(double speed) => speed.toStringAsFixed(1);
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final speed = ref.watch(defaultScrollSpeedProvider);
     return ListTile(
       leading: const Icon(Icons.speed_outlined),
       title: const Text('מהירות גלילה ברירת מחדל'),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      subtitle: Row(
         children: [
-          Row(
-            children: [
-              const Icon(Icons.slow_motion_video, size: 14),
-              Expanded(
-                child: Slider(
-                  value: speed,
-                  min: 1,
-                  max: 10,
-                  divisions: 9,
-                  label: speed.toStringAsFixed(0),
-                  onChanged: (v) =>
-                      ref.read(defaultScrollSpeedProvider.notifier).setValue(v),
-                ),
-              ),
-              const Icon(Icons.fast_forward, size: 14),
-            ],
+          const Text('איטי', style: TextStyle(fontSize: 11)),
+          Expanded(
+            child: Slider(
+              value: speed,
+              min: 0.1,
+              max: 3.0,
+              divisions: 9,
+              label: _speedLabel(speed),
+              onChanged: (v) =>
+                  ref.read(defaultScrollSpeedProvider.notifier).setValue(v),
+            ),
           ),
-          Text(
-            'מהירות נוכחית: ${speed.toStringAsFixed(0)}',
-            style: Theme.of(context).textTheme.bodySmall,
+          const Text('מהיר', style: TextStyle(fontSize: 11)),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 28,
+            child: Text(
+              _speedLabel(speed),
+              style: Theme.of(context).textTheme.bodySmall,
+              textAlign: TextAlign.center,
+            ),
           ),
         ],
       ),
@@ -432,13 +435,44 @@ class _AutoAdvanceTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final autoAdvance = ref.watch(autoAdvanceProvider);
     final advanceDelay = ref.watch(autoAdvanceDelayProvider);
-    final globalScrollDelay = ref.watch(globalScrollDelayProvider);
-    final hasGlobalDelay = globalScrollDelay != null;
+    final scrollDelay = ref.watch(globalScrollDelayProvider);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Toggle
+        // השהיה ברירת מחדל לפני תחילת גלילה
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'השהיה ברירת מחדל לפני גלילה: ${scrollDelay.toStringAsFixed(0)}ש׳',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              Row(
+                children: [
+                  const Icon(Icons.timer_outlined, size: 16),
+                  Expanded(
+                    child: Slider(
+                      value: scrollDelay,
+                      min: 0,
+                      max: 60,
+                      divisions: 60,
+                      label: '${scrollDelay.toStringAsFixed(0)}ש׳',
+                      onChanged: (v) => ref
+                          .read(globalScrollDelayProvider.notifier)
+                          .setValue(v),
+                    ),
+                  ),
+                  const Icon(Icons.timer, size: 16),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const Divider(indent: 16, endIndent: 16),
+        // Toggle מעבר אוטומטי
         ListTile(
           leading: const Icon(Icons.skip_next_outlined),
           title: const Text('מעבר אוטומטי לשיר הבא'),
@@ -480,62 +514,6 @@ class _AutoAdvanceTile extends ConsumerWidget {
               ],
             ),
           ),
-        // השהיה גלובלית לפני תחילת גלילה
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'השהיה גלובלית לפני גלילה',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-                  Switch(
-                    value: hasGlobalDelay,
-                    onChanged: (v) => ref
-                        .read(globalScrollDelayProvider.notifier)
-                        .setValue(v ? 3.0 : null),
-                  ),
-                ],
-              ),
-              Text(
-                hasGlobalDelay
-                    ? 'גובר על הגדרת ההשהיה המקומית בכל שיר'
-                    : 'כבוי – כל שיר משתמש בהגדרה המקומית שלו',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              if (hasGlobalDelay) ...[
-                const SizedBox(height: 4),
-                Text(
-                  'השהיה: ${globalScrollDelay.toStringAsFixed(0)}ש׳',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                Row(
-                  children: [
-                    const Icon(Icons.timer_outlined, size: 16),
-                    Expanded(
-                      child: Slider(
-                        value: globalScrollDelay,
-                        min: 0,
-                        max: 30,
-                        divisions: 30,
-                        label: '${globalScrollDelay.toStringAsFixed(0)}ש׳',
-                        onChanged: (v) => ref
-                            .read(globalScrollDelayProvider.notifier)
-                            .setValue(v),
-                      ),
-                    ),
-                    const Icon(Icons.timer, size: 16),
-                  ],
-                ),
-              ],
-            ],
-          ),
-        ),
       ],
     );
   }

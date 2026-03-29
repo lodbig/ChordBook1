@@ -285,35 +285,32 @@ class AutoAdvanceDelayNotifier extends StateNotifier<double> {
 }
 
 // ---------------------------------------------------------------------------
-// Global scroll delay provider (overrides per-song local setting)
+// Default scroll delay provider (0-60 seconds, replaces per-song local setting)
 // ---------------------------------------------------------------------------
 
 const _globalScrollDelayKey = 'globalScrollDelay';
-// null = use local per-song setting
+const double _defaultGlobalScrollDelay = 3.0;
+
 final globalScrollDelayProvider =
-    StateNotifierProvider<GlobalScrollDelayNotifier, double?>((ref) {
+    StateNotifierProvider<GlobalScrollDelayNotifier, double>((ref) {
   return GlobalScrollDelayNotifier();
 });
 
-class GlobalScrollDelayNotifier extends StateNotifier<double?> {
-  GlobalScrollDelayNotifier() : super(null) {
+class GlobalScrollDelayNotifier extends StateNotifier<double> {
+  GlobalScrollDelayNotifier() : super(_defaultGlobalScrollDelay) {
     _load();
   }
 
   Future<void> _load() async {
     final box = await _openSettingsBox();
-    final raw = box.get(_globalScrollDelayKey);
-    state = raw is double ? raw.clamp(0.0, 30.0) : null;
+    final raw = box.get(_globalScrollDelayKey, defaultValue: _defaultGlobalScrollDelay);
+    state = (raw as double).clamp(0.0, 60.0);
   }
 
-  Future<void> setValue(double? value) async {
-    state = value?.clamp(0.0, 30.0);
+  Future<void> setValue(double value) async {
+    state = value.clamp(0.0, 60.0);
     final box = await _openSettingsBox();
-    if (value == null) {
-      await box.delete(_globalScrollDelayKey);
-    } else {
-      await box.put(_globalScrollDelayKey, state);
-    }
+    await box.put(_globalScrollDelayKey, state);
   }
 }
 
@@ -322,7 +319,7 @@ class GlobalScrollDelayNotifier extends StateNotifier<double?> {
 // ---------------------------------------------------------------------------
 
 const _defaultScrollSpeedKey = 'defaultScrollSpeed';
-const double _defaultScrollSpeedValue = 3.0;
+const double _defaultScrollSpeedValue = 1.5;
 
 final defaultScrollSpeedProvider =
     StateNotifierProvider<DefaultScrollSpeedNotifier, double>((ref) {
@@ -338,11 +335,11 @@ class DefaultScrollSpeedNotifier extends StateNotifier<double> {
     final box = await _openSettingsBox();
     state = (box.get(_defaultScrollSpeedKey,
             defaultValue: _defaultScrollSpeedValue) as double)
-        .clamp(1.0, 10.0);
+        .clamp(0.1, 3.0);
   }
 
   Future<void> setValue(double value) async {
-    state = value.clamp(1.0, 10.0);
+    state = value.clamp(0.1, 3.0);
     final box = await _openSettingsBox();
     await box.put(_defaultScrollSpeedKey, state);
   }

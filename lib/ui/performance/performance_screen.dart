@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -55,20 +56,21 @@ class PerformanceScreen extends ConsumerStatefulWidget {
   ConsumerState<PerformanceScreen> createState() => _PerformanceScreenState();
 }
 
-class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
+class _PerformanceScreenState extends ConsumerState<PerformanceScreen>
+    with SingleTickerProviderStateMixin {
   final _scrollController = ScrollController();
 
   // View-only state (does NOT mutate storage – Property 11)
   int _transposeSteps = 0;
   double _fontSize = 18.0;
-  double _scrollSpeed = 0; // יאותחל מה-provider
-  double _scrollDelay = 3.0; // שניות המתנה לפני תחילת גלילה
+  double _scrollSpeed = 3.0;
+  double _scrollDelay = 3.0;
   bool _isScrolling = false;
   bool _toolbarVisible = true;
   String? _activeVersion;
-  bool _speedInitialized = false;
 
-  Timer? _scrollTimer;
+  Ticker? _scrollTicker;
+  double _scrollAccum = 0; // sub-pixel accumulator for smooth scroll
 
   static const double _minFontSize = 10.0;
   static const double _maxFontSize = 36.0;
@@ -76,7 +78,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
 
   @override
   void dispose() {
-    _scrollTimer?.cancel();
+    _scrollTicker?.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -84,8 +86,10 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
   @override
   void initState() {
     super.initState();
+    // אתחל מהירות והשהיה מה-providers מיד
+    _scrollSpeed = ref.read(defaultScrollSpeedProvider);
+    _scrollDelay = ref.read(globalScrollDelayProvider);
     if (widget.autoStart) {
-      // מתחיל גלילה אוטומטית לאחר שה-widget נבנה
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           final song = ref.read(_performanceSongProvider(widget.songId));
@@ -109,18 +113,16 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
 
   void _startScroll(Song song) {
     setState(() { _isScrolling = true; _toolbarVisible = false; });
-    // השהיה גלובלית גוברת על המקומית אם מוגדרת
-    final globalDelay = ref.read(globalScrollDelayProvider);
-    final effectiveDelay = globalDelay ?? _scrollDelay;
-    Future.delayed(Duration(milliseconds: (effectiveDelay * 1000).round()), () {
+    Future.delayed(Duration(milliseconds: (_scrollDelay * 1000).round()), () {
       if (!mounted || !_isScrolling) return;
-      _scrollTimer = Timer.periodic(const Duration(milliseconds: 50), (_) {
+      _scrollAccum = 0;
+      // px per second = _scrollSpeed * 10 (סקאלה 0.1-3.0 → 1-30 px/sec)
+      _scrollTicker = createTicker((elapsed) {
         if (!_scrollController.hasClients) return;
         final max = _scrollController.position.maxScrollExtent;
         final current = _scrollController.offset;
         if (current >= max) {
           _stopScroll();
-          // מעבר אוטומטי לשיר הבא אם מופעל
           final autoAdvance = ref.read(autoAdvanceProvider);
           if (autoAdvance && _hasNext) {
             final advanceDelay = ref.read(autoAdvanceDelayProvider);
@@ -144,15 +146,22 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
           }
           return;
         }
-        _scrollController.jumpTo(
-          (current + _scrollSpeed * 0.5).clamp(0, max),
-        );
+        // px per frame = speed * 10 / 60fps
+        _scrollAccum += _scrollSpeed * 10 / 60;
+        final pixels = _scrollAccum.floor();
+        if (pixels > 0) {
+          _scrollAccum -= pixels;
+          _scrollController.jumpTo((current + pixels).clamp(0, max));
+        }
       });
+      _scrollTicker!.start();
     });
   }
 
   void _stopScroll() {
-    _scrollTimer?.cancel();
+    _scrollTicker?.stop();
+    _scrollTicker?.dispose();
+    _scrollTicker = null;
     setState(() { _isScrolling = false; _toolbarVisible = true; });
   }
 
@@ -236,11 +245,6 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     _activeVersion ??= song.versions.keys.first;
-    // אתחל מהירות מה-provider פעם אחת
-    if (!_speedInitialized) {
-      _scrollSpeed = ref.read(defaultScrollSpeedProvider);
-      _speedInitialized = true;
-    }
     return _buildScreen(song);
   }
 
@@ -605,7 +609,6 @@ class _FloatingToolbar extends StatelessWidget {
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           // Play/Pause
           IconButton(
@@ -613,55 +616,44 @@ class _FloatingToolbar extends StatelessWidget {
             tooltip: isScrolling ? 'עצור גלילה' : 'גלילה אוטומטית',
             onPressed: onToggleScroll,
           ),
-          // Speed slider with label
+          // Speed slider
+          const Icon(Icons.speed, size: 14),
+          Expanded(
+            flex: 3,
+            child: Slider(
+              value: scrollSpeed,
+              min: 0.1,
+              max: 3.0,
+              divisions: 9,
+              onChanged: onSpeedChanged,
+            ),
+          ),
           SizedBox(
-            width: 130,
-            child: Row(
-              children: [
-                const Icon(Icons.speed, size: 14),
-                Expanded(
-                  child: Slider(
-                    value: scrollSpeed,
-                    min: 1,
-                    max: 10,
-                    onChanged: onSpeedChanged,
-                  ),
-                ),
-                SizedBox(
-                  width: 18,
-                  child: Text(
-                    scrollSpeed.toStringAsFixed(0),
-                    style: const TextStyle(fontSize: 10),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ],
+            width: 26,
+            child: Text(
+              scrollSpeed.toStringAsFixed(1),
+              style: const TextStyle(fontSize: 10),
+              textAlign: TextAlign.center,
             ),
           ),
           // Delay slider
+          const Icon(Icons.timer_outlined, size: 14),
+          Expanded(
+            flex: 3,
+            child: Slider(
+              value: scrollDelay,
+              min: 0,
+              max: 60,
+              divisions: 60,
+              onChanged: onDelayChanged,
+            ),
+          ),
           SizedBox(
-            width: 110,
-            child: Row(
-              children: [
-                const Icon(Icons.timer_outlined, size: 14),
-                Expanded(
-                  child: Slider(
-                    value: scrollDelay,
-                    min: 0,
-                    max: 10,
-                    divisions: 10,
-                    onChanged: onDelayChanged,
-                  ),
-                ),
-                SizedBox(
-                  width: 18,
-                  child: Text(
-                    '${scrollDelay.toStringAsFixed(0)}s',
-                    style: const TextStyle(fontSize: 10),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ],
+            width: 26,
+            child: Text(
+              '${scrollDelay.toStringAsFixed(0)}s',
+              style: const TextStyle(fontSize: 10),
+              textAlign: TextAlign.center,
             ),
           ),
           // Transpose

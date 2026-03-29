@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -59,53 +60,107 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
     if (_playlist == null) return;
     final existing = Set<String>.from(_playlist!.songIds);
     final selected = Set<String>.from(existing);
+    final searchCtrl = TextEditingController();
+    var query = '';
 
     await showDialog(
       context: context,
       builder: (_) => StatefulBuilder(
-        builder: (ctx, setState) => AlertDialog(
-          title: const Text('הוסף שירים'),
-          content: SizedBox(
-            width: 320,
-            height: 400,
-            child: ListView(
-              children: _allSongs.map((s) {
-                return CheckboxListTile(
-                  title: Text(s.title),
-                  subtitle: s.artist.isNotEmpty ? Text(s.artist) : null,
-                  value: selected.contains(s.id),
-                  onChanged: (v) {
-                    setState(() {
-                      if (v == true) {
-                        selected.add(s.id);
-                      } else {
-                        selected.remove(s.id);
-                      }
-                    });
-                  },
-                );
-              }).toList(),
+        builder: (ctx, setState) {
+          final filtered = query.isEmpty
+              ? _allSongs
+              : _allSongs.where((s) {
+                  final q = query.toLowerCase();
+                  return s.title.toLowerCase().contains(q) ||
+                      s.artist.toLowerCase().contains(q);
+                }).toList();
+
+          void confirm() {
+            Navigator.of(ctx).pop();
+            final newIds = [
+              ..._playlist!.songIds,
+              ...selected.where((id) => !existing.contains(id)),
+            ];
+            _save(_playlist!.copyWith(songIds: newIds));
+          }
+
+          return KeyboardListener(
+            focusNode: FocusNode(),
+            autofocus: false,
+            onKeyEvent: (event) {
+              if (event is KeyDownEvent &&
+                  event.logicalKey == LogicalKeyboardKey.enter) {
+                confirm();
+              }
+            },
+            child: AlertDialog(
+              title: const Text('הוסף שירים'),
+              content: SizedBox(
+                width: 320,
+                height: 460,
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: searchCtrl,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        hintText: 'חפש שיר או אמן...',
+                        prefixIcon: const Icon(Icons.search),
+                        suffixIcon: query.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  searchCtrl.clear();
+                                  setState(() => query = '');
+                                },
+                              )
+                            : null,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        isDense: true,
+                      ),
+                      onChanged: (v) => setState(() => query = v),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: ListView(
+                        children: filtered.map((s) {
+                          return CheckboxListTile(
+                            title: Text(s.title),
+                            subtitle:
+                                s.artist.isNotEmpty ? Text(s.artist) : null,
+                            value: selected.contains(s.id),
+                            onChanged: (v) {
+                              setState(() {
+                                if (v == true) {
+                                  selected.add(s.id);
+                                } else {
+                                  selected.remove(s.id);
+                                }
+                              });
+                            },
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('ביטול'),
+                ),
+                TextButton(
+                  autofocus: false,
+                  onPressed: confirm,
+                  child: const Text('הוסף'),
+                ),
+              ],
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('ביטול'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(ctx).pop();
-                // Preserve existing order, append new ones
-                final newIds = [
-                  ..._playlist!.songIds,
-                  ...selected.where((id) => !existing.contains(id)),
-                ];
-                _save(_playlist!.copyWith(songIds: newIds));
-              },
-              child: const Text('הוסף'),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
